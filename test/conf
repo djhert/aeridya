@@ -1,0 +1,16 @@
+## Aeridya
+
+# Port to listen on
+Port = 8000
+
+# Domain name
+Domain = domain.com
+
+# Development Mode
+Development = true
+
+# Log location (NOTE: use stdout to get term output)
+Log = stdout
+
+# Static file path
+Statics = statics
