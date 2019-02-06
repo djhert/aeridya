@@ -5,7 +5,7 @@ import "fmt"
 const (
 	NAME     = "Aeridya"
 	MAJORVER = "0"
-	MINORVER = "2"
+	MINORVER = "4"
 	VERTAG   = "-alpha"
 	DESC     = "Server and CMS"
 )

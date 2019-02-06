@@ -3,7 +3,7 @@ package aeridya
 import (
 	"fmt"
 	"github.com/hlfstr/aeridya/handler"
-	//	"github.com/hlfstr/aeridya/router"
+	"github.com/hlfstr/aeridya/router"
 	"github.com/hlfstr/aeridya/statics"
 	"github.com/hlfstr/configurit"
 	"github.com/hlfstr/logit"
@@ -28,8 +28,8 @@ type Aeridya struct {
 	Domain      string
 	Development bool
 
-	//	Route *route.Handler
-	Errors *errors
+	Route router.Router
+	//	Errors *errors
 }
 
 func Create(conf string) (*Aeridya, *configurit.Conf, error) {
@@ -41,8 +41,8 @@ func Create(conf string) (*Aeridya, *configurit.Conf, error) {
 		return nil, nil, err
 	}
 	instance.Statics.Defaults()
-	instance.Errors = CreateError()
 	instance.DefaultHandler = handler.Create()
+	instance.Route = router.BasicRoute{}
 	return instance, c, nil
 }
 
@@ -101,30 +101,11 @@ func (a *Aeridya) Run() error {
 }
 
 func (a Aeridya) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	/*if len(r.URL.Path) > 1 {
-		temp := r.URL.Path
-		if temp[len(temp)-1:] == "/" {
-			temp = temp[1 : len(temp)-1]
-		} else {
-			temp = temp[1:]
+	if resp := a.Route.Serve(w, r); resp.Error != nil {
+		if a.Development {
+			a.Logger.Logf("[Error[%d]] %s", resp.Status, resp.Error.Error())
 		}
-		parsed := strings.Split(temp, "/")
-		if val, ok := route.pages[parsed[0]]; ok {
-			val.Run(w, r, parsed)
-			return
-		} else {
-			if route.customRoute(parsed, w, r) {
-				return
-			}
-			route.Errors.showError(404, w, r)
-			return
-
-		}
-	} else {
-		route.pages["/"].Run(w, r, nil)
-		return
-	}*/
-	a.Errors.Show(404, nil, w, r)
+	}
 	return
 }
 
