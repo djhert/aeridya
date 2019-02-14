@@ -20,7 +20,7 @@ func main() {
 	r.Defaults()
 	a.Route = r
 
-	index, e := page.New("/", "Home", "./here", "nothing")
+	index, e := page.New("/", "Home", "home", "./here", "nothing")
 	if e != nil {
 		fmt.Println(e)
 		os.Exit(1)

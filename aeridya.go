@@ -8,6 +8,8 @@ import (
 	"github.com/hlfstr/configurit"
 	"github.com/hlfstr/logit"
 	"net/http"
+	"os"
+	"runtime"
 )
 
 //Global reference to Aeridya instance
@@ -20,28 +22,27 @@ func init() {
 
 //Aeridya Type Definition
 type Aeridya struct {
-	Logger         *Logit.Logger
-	DefaultHandler *handler.Handler
-	Statics        *statics.Statics
+	Logger  *logit.Logger
+	Handler *handler.Handler
+	Statics *statics.Statics
 
-	Port        string
-	Domain      string
-	Development bool
+	BaseTemplate string
+	TemplateDir  string
+	Port         string
+	Domain       string
+	Development  bool
 
 	Route router.Router
-	//	Errors *errors
 }
 
 func Create(conf string) (*Aeridya, *configurit.Conf, error) {
-	if instance == nil {
-		instance = new(Aeridya)
-	}
+	instance = new(Aeridya)
 	c, err := instance.loadConfig(conf)
 	if err != nil {
 		return nil, nil, err
 	}
 	instance.Statics.Defaults()
-	instance.DefaultHandler = handler.Create()
+	instance.Handler = handler.Create()
 	instance.Route = router.BasicRoute{}
 	return instance, c, nil
 }
@@ -66,14 +67,14 @@ func (a *Aeridya) loadConfig(conf string) (*configurit.Conf, error) {
 		return nil, err
 	} else {
 		if log == "stdout" {
-			if a.Logger, err = Logit.StartLogger(Logit.TermLog()); err != nil {
+			if a.Logger, err = logit.StartLogger(logit.TermLog()); err != nil {
 				return nil, err
 			}
 		} else {
-			if file, err := Logit.OpenFile(log); err != nil {
+			if file, err := logit.OpenFile(log); err != nil {
 				return nil, err
 			} else {
-				if a.Logger, err = Logit.StartLogger(file); err != nil {
+				if a.Logger, err = logit.StartLogger(file); err != nil {
 					return nil, err
 				}
 			}
@@ -86,6 +87,12 @@ func (a *Aeridya) loadConfig(conf string) (*configurit.Conf, error) {
 		a.Statics = statics.Create(sdir)
 	}
 
+	if t, err := c.GetString("", "Templates"); err != nil {
+		return nil, err
+	} else {
+		a.TemplateDir = t
+	}
+
 	if a.Development, err = c.GetBool("", "Development"); err != nil {
 		return nil, err
 	}
@@ -94,9 +101,10 @@ func (a *Aeridya) loadConfig(conf string) (*configurit.Conf, error) {
 }
 
 func (a *Aeridya) Run() error {
+	defer a.panicAttack()
 	a.Logger.Logf("Starting %s for %s | Listening on %s", Version(), a.Domain, a.Port)
-	http.Handle("/", a)
-	a.Statics.Serve(a.DefaultHandler.Get())
+	http.Handle("/", a.Handler.Final(http.HandlerFunc(a.ServeHTTP)))
+	go a.Statics.Serve(a.Handler.Get())
 	return http.ListenAndServe(a.Port, nil)
 }
 
@@ -111,4 +119,15 @@ func (a Aeridya) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func mkerror(msg string) error {
 	return fmt.Errorf("Aeridya: %s", msg)
+}
+
+func (a Aeridya) panicAttack() {
+	err := recover()
+	if err != nil {
+		a.Logger.Logf("PANIC!\n  %#v\n", err)
+		buf := make([]byte, 4096)
+		buf = buf[:runtime.Stack(buf, true)]
+		a.Logger.Logf("Stack Trace:\n%s\n", buf)
+		os.Exit(1)
+	}
 }

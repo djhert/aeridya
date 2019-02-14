@@ -3,7 +3,6 @@ package page
 import (
 	"errors"
 	"fmt"
-	"github.com/hlfstr/aeridya/handler"
 	"github.com/hlfstr/aeridya/router"
 	"html/template"
 	"net/http"
@@ -16,8 +15,6 @@ type Handler interface {
 }
 
 type Page struct {
-	handler.Handler
-
 	Route string
 	Title string
 
@@ -32,14 +29,14 @@ type Page struct {
 	onDelete func(w http.ResponseWriter, r *http.Request, resp *router.Response)
 }
 
-func New(route string, title string, baseTemplate string, tmpls ...string) (*Page, error) {
+func New(route string, title string, tmpldir string, tmpls ...string) (*Page, error) {
 	p := &Page{}
-	p.Init()
 	p.Route = route
 	p.Title = title
-	p.templates = append([]string{baseTemplate}, tmpls...)
+	p.templates = addPath(tmpldir, tmpls)
 	p.options = make([]string, 0)
-	return p, nil
+	err := p.LoadPage()
+	return p, err
 }
 
 func (p *Page) Defaults() {
@@ -47,6 +44,20 @@ func (p *Page) Defaults() {
 	p.onPut = p.undefined
 	p.onPost = p.undefined
 	p.onDelete = p.undefined
+}
+
+func (p *Page) LoadPage() error {
+	var err error
+	p.Template, err = template.ParseFiles(p.templates...)
+	return err
+}
+
+func addPath(dir string, tmps []string) []string {
+	s := make([]string, len(tmps))
+	for i := 0; i < len(tmps); i++ {
+		s[i] = dir + "/" + tmps[i]
+	}
+	return s
 }
 
 func (p *Page) OnGet(f func(w http.ResponseWriter, r *http.Request, resp *router.Response)) {
@@ -100,11 +111,6 @@ func (p *Page) teapot(w http.ResponseWriter, r *http.Request, resp *router.Respo
 
 func (p Page) Run(w http.ResponseWriter, r *http.Request) *router.Response {
 	resp := &router.Response{}
-	p.Exe(w, r, resp)
-	return resp
-}
-
-func (p Page) Exe(w http.ResponseWriter, r *http.Request, resp *router.Response) {
 	switch r.Method {
 	case "GET":
 		p.onGet(w, r, resp)
@@ -121,4 +127,5 @@ func (p Page) Exe(w http.ResponseWriter, r *http.Request, resp *router.Response)
 	default:
 		p.teapot(w, r, resp)
 	}
+	return resp
 }

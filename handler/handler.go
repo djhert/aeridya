@@ -6,7 +6,6 @@ import (
 
 type Handler struct {
 	handlers []func(http.Handler) http.Handler
-	Handle   http.Handler
 }
 
 func Create() *Handler {
@@ -38,6 +37,5 @@ func (c *Handler) Final(a http.Handler) http.Handler {
 	for i := range c.handlers {
 		handle = c.handlers[len(c.handlers)-1-i](handle)
 	}
-	c.Handle = handle
 	return handle
 }
