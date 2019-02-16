@@ -34,7 +34,7 @@ func Create(conf string) error {
 	}
 	Static.Defaults()
 	Handler = handler.Create()
-	//	Theme = &Theming{}
+	Theme = &Theming{}
 	isInit = true
 	return nil
 }
