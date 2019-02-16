@@ -6,6 +6,9 @@ Port = 8000
 # Domain name
 Domain = domain.com
 
+# Workers
+Workers = 10
+
 # Development Mode
 Development = true
 
