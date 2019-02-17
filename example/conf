@@ -17,3 +17,6 @@ Log = stdout
 
 # Static file path
 Statics = statics
+
+# Template file path
+Template = template

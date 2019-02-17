@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/hlfstr/aeridya"
+	"github.com/hlfstr/aeridya/utils/statictheme"
+	"html/template"
 	"net/http"
 	"os"
 )
@@ -13,10 +15,13 @@ func main() {
 		fmt.Println(e)
 		os.Exit(1)
 	}
-
-	//	aeridya.Theme = &theme{}
-	aeridya.Theme = &aeridya.Theming{}
-	aeridya.Theme.Init()
+	them := &theme{}
+	err := them.Init("main.html")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	aeridya.Theme = them
 	e = aeridya.Run()
 	if e != nil {
 		fmt.Println(e)
@@ -25,23 +30,23 @@ func main() {
 }
 
 type theme struct {
-	aeridya.Theming
+	statictheme.Theme
+	aeridya.Page
 }
 
-func (t *theme) Init() {
-}
-
-func (t *theme) Serve(w http.ResponseWriter, r *http.Request, resp *aeridya.Response) {
-	if r.URL.Path == "/" {
-		resp.Status = 200
-		fmt.Fprintf(w, "Hello Example!\n")
-		return
+func (t *theme) Init(s string) error {
+	if err := t.StaticInit(s); err != nil {
+		return err
 	}
-	t.Error(w, r, resp)
+	a := template.New("default")
+	t.Errors[404], _ = a.Parse("Page not found: {{.Status}}\n{{.Err}}\n")
+
+	t.Pages["/"] = t
+	return nil
 }
 
-func (t *theme) Error(w http.ResponseWriter, r *http.Request, resp *aeridya.Response) {
-	resp.Bad(404, "Example theme only supports /", w)
-	fmt.Fprintf(w, "Error: %d\n%s\n", resp.Status, resp.Err)
+func (t theme) Get(w http.ResponseWriter, r *http.Request, resp *aeridya.Response) {
+	resp.Good(200, w)
+	fmt.Fprintf(w, "Hello Test!\n")
 	return
 }

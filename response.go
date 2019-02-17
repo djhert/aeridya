@@ -25,3 +25,8 @@ func (r *Response) Bad(status int, msg string, w http.ResponseWriter) {
 	r.Error(msg)
 	w.WriteHeader(status)
 }
+
+func (s *Response) Redirect(status int, url string, w http.ResponseWriter, r *http.Request) {
+	s.Status = status
+	http.Redirect(w, r, url, status)
+}

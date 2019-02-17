@@ -7,6 +7,7 @@ import (
 )
 
 type Paging interface {
+	LoadPage() error
 	Get(w http.ResponseWriter, r *http.Request, resp *Response)
 	Put(w http.ResponseWriter, r *http.Request, resp *Response)
 	Post(w http.ResponseWriter, r *http.Request, resp *Response)
@@ -21,6 +22,10 @@ type Page struct {
 	Title string
 
 	options []string
+}
+
+func (p *Page) LoadPage() error {
+	return nil
 }
 
 func (p *Page) Get(w http.ResponseWriter, r *http.Request, resp *Response) {
