@@ -3,7 +3,6 @@ package statictheme
 import (
 	"github.com/hlfstr/aeridya"
 	"html/template"
-	"net/http"
 )
 
 type Theme struct {
@@ -29,11 +28,6 @@ func (t *Theme) StaticInit(base string) error {
 }
 
 func (t Theme) Parse(input string, resp *aeridya.Response) aeridya.Paging {
-	if len(input) > 1 {
-		if input[len(input)-1:] == "/" {
-			input = input[:len(input)-1]
-		}
-	}
 	if p, ok := t.Pages[input]; !ok {
 		resp.Error("Page " + input + " not found")
 		return nil
@@ -42,25 +36,25 @@ func (t Theme) Parse(input string, resp *aeridya.Response) aeridya.Paging {
 	}
 }
 
-func (t Theme) Serve(w http.ResponseWriter, r *http.Request, resp *aeridya.Response) {
-	o := t.Parse(r.URL.Path, resp)
+func (t Theme) Serve(resp *aeridya.Response) {
+	o := t.Parse(resp.R.URL.Path, resp)
 	if o == nil {
-		resp.Bad(404, resp.Err.Error(), w)
-		aeridya.ThemeError(w, r, resp, t)
+		resp.Bad(404, resp.Err.Error())
+		aeridya.ThemeError(resp, t)
 		return
 	}
-	aeridya.ServePage(w, r, resp, o)
+	aeridya.ServePage(resp, o)
 	return
 }
 
-func (t Theme) Error(w http.ResponseWriter, r *http.Request, resp *aeridya.Response) {
+func (t Theme) Error(resp *aeridya.Response) {
 	if resp.Data == nil {
 		resp.Data = resp
 	}
 	if s, ok := t.Errors[resp.Status]; ok {
-		s.Execute(w, resp.Data)
+		s.Execute(resp.W, resp.Data)
 	} else {
-		t.Errors[0].Execute(w, resp)
+		t.Errors[0].Execute(resp.W, resp)
 	}
 	return
 }

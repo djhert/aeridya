@@ -5,7 +5,6 @@ import (
 	"github.com/hlfstr/aeridya"
 	"github.com/hlfstr/aeridya/utils/statictheme"
 	"html/template"
-	"net/http"
 	"os"
 )
 
@@ -45,8 +44,8 @@ func (t *theme) Init(s string) error {
 	return nil
 }
 
-func (t theme) Get(w http.ResponseWriter, r *http.Request, resp *aeridya.Response) {
-	resp.Good(200, w)
-	fmt.Fprintf(w, "Hello Test!\n")
+func (t theme) Get(resp *aeridya.Response) {
+	resp.Good(200)
+	fmt.Fprintf(resp.W, "Hello Test!\n")
 	return
 }

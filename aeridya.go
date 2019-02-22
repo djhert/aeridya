@@ -96,14 +96,14 @@ func Run() error {
 	}
 	defer panicAttack()
 	Logger.Logf("Starting %s for %s | Listening on %s", Version(), Domain, Port)
-	http.Handle("/", Handler.Final(limit(http.HandlerFunc(serve))))
+	http.Handle("/", Handler.Final(internalTrailingSlash(http.HandlerFunc(serve))))
 	go Static.Serve(Handler.Get())
 	return http.ListenAndServe(Port, nil)
 }
 
 func serve(w http.ResponseWriter, r *http.Request) {
-	resp := &Response{}
-	Theme.Serve(w, r, resp)
+	resp := &Response{W: w, R: r}
+	Theme.Serve(resp)
 	if resp.Err != nil {
 		if Development {
 			Logger.Logf("[Error(%d)] %s", resp.Status, resp.Err.Error())
@@ -115,7 +115,47 @@ func serve(w http.ResponseWriter, r *http.Request) {
 func limit(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		limiter <- struct{}{}
-		defer func() { <-limiter }()
+		h.ServeHTTP(w, r)
+		<-limiter
+	})
+}
+
+func AddTrailingSlash(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u := r.URL.Path
+		if u[len(u)-1:] != "/" {
+			u = u + "/"
+			http.Redirect(w, r, u, 301)
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+func NoTrailingSlash(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u := r.URL.Path
+		if u[len(u)-1:] == "/" {
+			u = u[:len(u)-1]
+			http.Redirect(w, r, u, 301)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func internalTrailingSlash(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u := r.URL.Path
+		if len(u) > 1 {
+			if u[len(u)-1:] == "/" {
+				u = u[:len(u)-1]
+			}
+		} else {
+			u = "/"
+		}
+		r.URL.Path = u
 		h.ServeHTTP(w, r)
 	})
 }

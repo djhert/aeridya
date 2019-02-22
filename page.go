@@ -2,19 +2,18 @@ package aeridya
 
 import (
 	"fmt"
-	"net/http"
 	"net/http/httputil"
 )
 
 type Paging interface {
 	LoadPage() error
-	Get(w http.ResponseWriter, r *http.Request, resp *Response)
-	Put(w http.ResponseWriter, r *http.Request, resp *Response)
-	Post(w http.ResponseWriter, r *http.Request, resp *Response)
-	Delete(w http.ResponseWriter, r *http.Request, resp *Response)
-	Options(w http.ResponseWriter, r *http.Request, resp *Response)
-	Head(w http.ResponseWriter, r *http.Request, resp *Response)
-	Unsupported(w http.ResponseWriter, r *http.Request, resp *Response)
+	Get(resp *Response)
+	Put(resp *Response)
+	Post(resp *Response)
+	Delete(resp *Response)
+	Options(resp *Response)
+	Head(resp *Response)
+	Unsupported(resp *Response)
 }
 
 type Page struct {
@@ -28,20 +27,20 @@ func (p *Page) LoadPage() error {
 	return nil
 }
 
-func (p *Page) Get(w http.ResponseWriter, r *http.Request, resp *Response) {
-	p.undefined(w, r, resp)
+func (p *Page) Get(resp *Response) {
+	p.undefined(resp)
 }
 
-func (p *Page) Put(w http.ResponseWriter, r *http.Request, resp *Response) {
-	p.undefined(w, r, resp)
+func (p *Page) Put(resp *Response) {
+	p.undefined(resp)
 }
 
-func (p *Page) Post(w http.ResponseWriter, r *http.Request, resp *Response) {
-	p.undefined(w, r, resp)
+func (p *Page) Post(resp *Response) {
+	p.undefined(resp)
 }
 
-func (p *Page) Delete(w http.ResponseWriter, r *http.Request, resp *Response) {
-	p.undefined(w, r, resp)
+func (p *Page) Delete(resp *Response) {
+	p.undefined(resp)
 }
 
 func (p *Page) OnOptions(opts ...string) {
@@ -57,8 +56,8 @@ func (p *Page) OnOptions(opts ...string) {
 	}
 }
 
-func (p *Page) Head(w http.ResponseWriter, r *http.Request, resp *Response) {
-	requestDump, err := httputil.DumpRequest(r, false)
+func (p *Page) Head(resp *Response) {
+	requestDump, err := httputil.DumpRequest(resp.R, false)
 	if err != nil {
 		resp.Status = 500
 		resp.Err = err
@@ -66,45 +65,45 @@ func (p *Page) Head(w http.ResponseWriter, r *http.Request, resp *Response) {
 		return
 	}
 	resp.Status = 200
-	fmt.Fprintf(w, "%s\n", string(requestDump))
+	fmt.Fprintf(resp.W, "%s\n", string(requestDump))
 }
 
-func (p *Page) Options(w http.ResponseWriter, r *http.Request, resp *Response) {
+func (p *Page) Options(resp *Response) {
 	if p.options == nil {
-		p.undefined(w, r, resp)
+		p.undefined(resp)
 		return
 	}
-	resp.Good(200, w)
-	fmt.Fprintf(w, "%s\n", p.options)
+	resp.Good(200)
+	fmt.Fprintf(resp.W, "%s\n", p.options)
 }
 
-func (p *Page) undefined(w http.ResponseWriter, r *http.Request, resp *Response) {
-	resp.Bad(400, "Bad Request "+r.Method+" to "+r.URL.Path, w)
-	fmt.Fprintf(w, "Error: %d\n%s\n", resp.Status, resp.Err)
+func (p *Page) undefined(resp *Response) {
+	resp.Bad(400, "Bad Request "+resp.R.Method+" to "+resp.R.URL.Path)
+	fmt.Fprintf(resp.W, "Error: %d\n%s\n", resp.Status, resp.Err)
 	resp.Data = resp
 }
 
-func (p *Page) Unsupported(w http.ResponseWriter, r *http.Request, resp *Response) {
-	resp.Bad(418, "Unsupported Request "+r.Method+" to "+r.URL.Path, w)
-	fmt.Fprintf(w, "Error: %d\n%s\nI'M A TEAPOT!\n", resp.Status, resp.Err)
+func (p *Page) Unsupported(resp *Response) {
+	resp.Bad(418, "Unsupported Request "+resp.R.Method+" to "+resp.R.URL.Path)
+	fmt.Fprintf(resp.W, "Error: %d\n%s\nI'M A TEAPOT!\n", resp.Status, resp.Err)
 	resp.Data = resp
 }
 
-func ServePage(w http.ResponseWriter, r *http.Request, resp *Response, p Paging) {
-	switch r.Method {
+func ServePage(resp *Response, p Paging) {
+	switch resp.R.Method {
 	case "GET":
-		p.Get(w, r, resp)
+		p.Get(resp)
 	case "PUT":
-		p.Put(w, r, resp)
+		p.Put(resp)
 	case "POST":
-		p.Post(w, r, resp)
+		p.Post(resp)
 	case "DELETE":
-		p.Delete(w, r, resp)
+		p.Delete(resp)
 	case "OPTIONS":
-		p.Options(w, r, resp)
+		p.Options(resp)
 	case "HEAD":
-		p.Head(w, r, resp)
+		p.Head(resp)
 	default:
-		p.Unsupported(w, r, resp)
+		p.Unsupported(resp)
 	}
 }

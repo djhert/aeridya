@@ -2,12 +2,11 @@ package aeridya
 
 import (
 	"fmt"
-	"net/http"
 )
 
 type theming interface {
-	Serve(w http.ResponseWriter, r *http.Request, resp *Response)
-	Error(w http.ResponseWriter, r *http.Request, resp *Response)
+	Serve(resp *Response)
+	Error(resp *Response)
 }
 
 type ATheme struct {
@@ -19,26 +18,26 @@ func (t *ATheme) Init() {
 	t.Route = "/"
 }
 
-func (t *ATheme) Get(w http.ResponseWriter, r *http.Request, resp *Response) {
-	resp.Good(200, w)
-	fmt.Fprintf(w, "Hello Aeridya!\n")
+func (t *ATheme) Get(resp *Response) {
+	resp.Good(200)
+	fmt.Fprintf(resp.W, "Hello Aeridya!\n")
 	return
 }
 
-func (t *ATheme) Serve(w http.ResponseWriter, r *http.Request, resp *Response) {
-	if r.URL.Path == "/" {
-		ServePage(w, r, resp, t)
+func (t *ATheme) Serve(resp *Response) {
+	if resp.R.URL.Path == "/" {
+		ServePage(resp, t)
 		return
 	}
-	t.Error(w, r, resp)
+	t.Error(resp)
 }
 
-func (t *ATheme) Error(w http.ResponseWriter, r *http.Request, resp *Response) {
-	resp.Bad(404, "Built-in theme only supports /", w)
-	fmt.Fprintf(w, "Error: %d\n%s\n", resp.Status, resp.Err)
+func (t *ATheme) Error(resp *Response) {
+	resp.Bad(404, "Built-in theme only supports /")
+	fmt.Fprintf(resp.W, "Error: %d\n%s\n", resp.Status, resp.Err)
 	return
 }
 
-func ThemeError(w http.ResponseWriter, r *http.Request, resp *Response, t theming) {
-	t.Error(w, r, resp)
+func ThemeError(resp *Response, t theming) {
+	t.Error(resp)
 }

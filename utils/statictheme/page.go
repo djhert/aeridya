@@ -33,3 +33,11 @@ func (p *Page) LoadPage() error {
 	p.PageTemp, err = template.ParseFiles(p.Templates...)
 	return err
 }
+
+func (p *Page) Get(resp *aeridya.Response) {
+	resp.Good(200)
+	if aeridya.Development {
+		p.LoadPage()
+	}
+	p.PageTemp.Execute(resp.W, p)
+}
