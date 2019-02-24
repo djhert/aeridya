@@ -22,6 +22,8 @@ var (
 
 	Theme theming
 
+	quitters []func()
+
 	isInit  bool
 	limiter chan struct{}
 )
@@ -32,6 +34,8 @@ func Create(conf string) error {
 	if err != nil {
 		return err
 	}
+	quitters = make([]func(), 0)
+	AddQuit(Logger.Quit)
 	Static.Defaults()
 	Handler = handler.Create()
 	Theme = &ATheme{}
@@ -90,11 +94,16 @@ func loadConfig(conf string) (*configurit.Conf, error) {
 	return c, err
 }
 
+func AddQuit(f func()) {
+	quitters = append(quitters, f)
+}
+
 func Run() error {
 	if !isInit {
 		return mkerror("Must use Create(\"/path/to/config\") before Run()")
 	}
 	defer panicAttack()
+	defer quit()
 	Logger.Logf("Starting %s for %s | Listening on %s", Version(), Domain, Port)
 	http.Handle("/", Handler.Final(internalTrailingSlash(http.HandlerFunc(serve))))
 	go Static.Serve(Handler.Get())
@@ -162,6 +171,12 @@ func internalTrailingSlash(h http.Handler) http.Handler {
 
 func mkerror(msg string) error {
 	return fmt.Errorf("Aeridya[Error]: %s", msg)
+}
+
+func quit() {
+	for i := range quitters {
+		quitters[i]()
+	}
 }
 
 func panicAttack() {
