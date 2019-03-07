@@ -69,14 +69,14 @@ func loadConfig(conf string) (*configurit.Conf, error) {
 		return nil, err
 	} else {
 		if log == "stdout" {
-			if Logger, err = logit.StartLogger(logit.TermLog()); err != nil {
+			if Logger, err = logit.Start(logit.TermLog()); err != nil {
 				return nil, err
 			}
 		} else {
 			if file, err := logit.OpenFile(log); err != nil {
 				return nil, err
 			} else {
-				if Logger, err = logit.StartLogger(file); err != nil {
+				if Logger, err = logit.Start(file); err != nil {
 					return nil, err
 				}
 			}
@@ -104,7 +104,7 @@ func Run() error {
 	}
 	defer panicAttack()
 	defer quit()
-	Logger.Logf("Starting %s for %s | Listening on %s", Version(), Domain, Port)
+	Logger.Logf(logit.MSG, "Starting %s for %s | Listening on %s", Version(), Domain, Port)
 	http.Handle("/", Handler.Final(internalTrailingSlash(http.HandlerFunc(serve))))
 	go Static.Serve(Handler.Get())
 	return http.ListenAndServe(Port, nil)
@@ -115,7 +115,7 @@ func serve(w http.ResponseWriter, r *http.Request) {
 	Theme.Serve(resp)
 	if resp.Err != nil {
 		if Development {
-			Logger.Logf("[Error(%d)] %s", resp.Status, resp.Err.Error())
+			Logger.Logf(logit.ERROR, "[Error(%d)] %s", resp.Status, resp.Err.Error())
 		}
 	}
 	return
@@ -182,10 +182,10 @@ func quit() {
 func panicAttack() {
 	err := recover()
 	if err != nil {
-		Logger.Logf("PANIC!\n  %#v\n", err)
+		Logger.Logf(logit.PANIC, "PANIC!\n  %#v\n", err)
 		buf := make([]byte, 4096)
 		buf = buf[:runtime.Stack(buf, true)]
-		Logger.Logf("Stack Trace:\n%s\n", buf)
+		Logger.Logf(logit.PANIC, "Stack Trace:\n%s\n", buf)
 		os.Exit(1)
 	}
 }

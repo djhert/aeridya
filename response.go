@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gorilla/securecookie"
 	"net/http"
+	"time"
 )
 
 var cookieHandler = securecookie.New(
