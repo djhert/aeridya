@@ -2,14 +2,13 @@ package aeridya
 
 import (
 	"errors"
-	"github.com/gorilla/securecookie"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/securecookie"
 )
 
-var cookieHandler = securecookie.New(
-	securecookie.GenerateRandomKey(64),
-	securecookie.GenerateRandomKey(32))
+var cookieHandler *securecookie.SecureCookie
 
 type Response struct {
 	W      http.ResponseWriter
@@ -63,7 +62,7 @@ func (r *Response) AddCookie(name string, hour int, values map[string]string) er
 		Path:     "/",
 		MaxAge:   60 * hour,
 		Expires:  time.Now().Add(24 * time.Hour),
-		HttpOnly: true,
+		HttpOnly: false,
 	}
 	http.SetCookie(r.W, &c)
 	return nil

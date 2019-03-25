@@ -2,6 +2,7 @@ package aeridya
 
 import (
 	"fmt"
+	"github.com/gorilla/securecookie"
 	"github.com/hlfstr/aeridya/handler"
 	"github.com/hlfstr/configurit"
 	"github.com/hlfstr/logit"
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	Logger  *logit.Logger
+	Log     *logit.Logger
 	Handler *handler.Handler
 	Static  *statics
 	Config  *configurit.Conf
@@ -21,6 +22,9 @@ var (
 	Development bool
 
 	Theme theming
+
+	cookieHash  []byte
+	cookieBlock []byte
 
 	quitters []func()
 
@@ -35,10 +39,11 @@ func Create(conf string) error {
 		return err
 	}
 	quitters = make([]func(), 0)
-	AddQuit(Logger.Quit)
+	AddQuit(Log.Quit)
 	Static.Defaults()
 	Handler = handler.Create()
 	Theme = &ATheme{}
+	cookieHandler = securecookie.New(cookieHash, cookieBlock)
 	isInit = true
 	return nil
 }
@@ -65,18 +70,30 @@ func loadConfig(conf string) (*configurit.Conf, error) {
 		limiter = make(chan struct{}, n)
 	}
 
+	if h, err := c.GetString("", "CookieHash"); err != nil {
+		return nil, err
+	} else {
+		cookieHash = []byte(h)
+	}
+
+	if h, err := c.GetString("", "CookieBlock"); err != nil {
+		return nil, err
+	} else {
+		cookieBlock = []byte(h)
+	}
+
 	if log, err := c.GetString("", "Log"); err != nil {
 		return nil, err
 	} else {
 		if log == "stdout" {
-			if Logger, err = logit.Start(logit.TermLog()); err != nil {
+			if Log, err = logit.Start(logit.TermLog()); err != nil {
 				return nil, err
 			}
 		} else {
 			if file, err := logit.OpenFile(log); err != nil {
 				return nil, err
 			} else {
-				if Logger, err = logit.Start(file); err != nil {
+				if Log, err = logit.Start(file); err != nil {
 					return nil, err
 				}
 			}
@@ -104,7 +121,7 @@ func Run() error {
 	}
 	defer panicAttack()
 	defer quit()
-	Logger.Logf(logit.MSG, "Starting %s for %s | Listening on %s", Version(), Domain, Port)
+	Log.Logf(logit.MSG, "Starting %s for %s | Listening on %s", Version(), Domain, Port)
 	http.Handle("/", Handler.Final(internalTrailingSlash(http.HandlerFunc(serve))))
 	go Static.Serve(Handler.Get())
 	return http.ListenAndServe(Port, nil)
@@ -115,7 +132,7 @@ func serve(w http.ResponseWriter, r *http.Request) {
 	Theme.Serve(resp)
 	if resp.Err != nil {
 		if Development {
-			Logger.Logf(logit.ERROR, "[Error(%d)] %s", resp.Status, resp.Err.Error())
+			Log.Logf(logit.ERROR, "[Error(%d)] %s", resp.Status, resp.Err.Error())
 		}
 	}
 	return
@@ -182,10 +199,10 @@ func quit() {
 func panicAttack() {
 	err := recover()
 	if err != nil {
-		Logger.Logf(logit.PANIC, "PANIC!\n  %#v\n", err)
+		Log.Logf(logit.PANIC, "PANIC!\n  %#v\n", err)
 		buf := make([]byte, 4096)
 		buf = buf[:runtime.Stack(buf, true)]
-		Logger.Logf(logit.PANIC, "Stack Trace:\n%s\n", buf)
+		Log.Logf(logit.PANIC, "Stack Trace:\n%s\n", buf)
 		os.Exit(1)
 	}
 }
