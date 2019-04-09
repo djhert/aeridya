@@ -1,17 +1,23 @@
 package aeridya
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"runtime"
+
 	"github.com/gorilla/securecookie"
 	"github.com/hlfstr/aeridya/handler"
 	"github.com/hlfstr/configurit"
 	"github.com/hlfstr/logit"
-	"net/http"
-	"os"
-	"runtime"
+	"github.com/hlfstr/quit"
+	"github.com/hlfstr/quit/quitters"
 )
 
 var (
+	server *http.Server
+
 	Log     *logit.Logger
 	Handler *handler.Handler
 	Static  *statics
@@ -19,14 +25,14 @@ var (
 
 	Port        string
 	Domain      string
+	FullDomain  string
 	Development bool
+	HTTPS       bool
 
 	Theme theming
 
 	cookieHash  []byte
 	cookieBlock []byte
-
-	quitters []func()
 
 	isInit  bool
 	limiter chan struct{}
@@ -38,12 +44,19 @@ func Create(conf string) error {
 	if err != nil {
 		return err
 	}
-	quitters = make([]func(), 0)
-	AddQuit(Log.Quit)
+	//quitter.AddQuit(shutdown)
+	quitters.AddQuit(quit.Quit)
+	quitters.AddQuit(Log.Quit)
 	Static.Defaults()
 	Handler = handler.Create()
 	Theme = &ATheme{}
 	cookieHandler = securecookie.New(cookieHash, cookieBlock)
+	if HTTPS {
+		FullDomain = "https://" + Domain
+	} else {
+		FullDomain = "http://" + Domain
+	}
+	server = &http.Server{Addr: Port}
 	isInit = true
 	return nil
 }
@@ -99,32 +112,41 @@ func loadConfig(conf string) (*configurit.Conf, error) {
 			}
 		}
 	}
+
 	if s, err := c.GetString("", "Statics"); err != nil {
 		return nil, err
 	} else {
 		Static = NewStatics(s)
 	}
+
 	if Development, err = c.GetBool("", "Development"); err != nil {
+		return nil, err
+	}
+
+	if HTTPS, err = c.GetBool("", "HTTPS"); err != nil {
 		return nil, err
 	}
 
 	return c, err
 }
 
-func AddQuit(f func()) {
-	quitters = append(quitters, f)
-}
-
 func Run() error {
 	if !isInit {
 		return mkerror("Must use Create(\"/path/to/config\") before Run()")
 	}
+	go quit.Run(shutdown, shutdown)
 	defer panicAttack()
-	defer quit()
+	defer quitters.Quit()
 	Log.Logf(logit.MSG, "Starting %s for %s | Listening on %s", Version(), Domain, Port)
 	http.Handle("/", Handler.Final(internalTrailingSlash(http.HandlerFunc(serve))))
 	go Static.Serve(Handler.Get())
-	return http.ListenAndServe(Port, nil)
+	err := server.ListenAndServe()
+	if err != http.ErrServerClosed {
+		Log.LogError(1, err)
+		return nil
+	}
+	Log.Log(0, "Closing aeridya")
+	return nil
 }
 
 func serve(w http.ResponseWriter, r *http.Request) {
@@ -190,9 +212,10 @@ func mkerror(msg string) error {
 	return fmt.Errorf("Aeridya[Error]: %s", msg)
 }
 
-func quit() {
-	for i := range quitters {
-		quitters[i]()
+func shutdown() {
+	if err := server.Shutdown(context.Background()); err != nil {
+		Log.LogError(1, err)
+		server.Close()
 	}
 }
 

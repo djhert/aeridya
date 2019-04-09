@@ -1,0 +1,14 @@
+github.com/gorilla/securecookie v1.1.1 h1:miw7JPhV+b/lAHSXz4qd/nN9jRiAFV5FwjeKyCS8BvQ=
+github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
+github.com/hlfstr/configurit v0.0.0-20190130222607-6d2fa5059bb5 h1:huI6dQu5V0CjI0m4y2d2GLomaGAPAyyzicEPa1Na0Hk=
+github.com/hlfstr/configurit v0.0.0-20190130222607-6d2fa5059bb5/go.mod h1:ueCtpN1akzAsoVaX94QMV2q0yavKOYqkqutEp+fkYE8=
+github.com/hlfstr/logit v0.0.0-20190304034238-096a6c1d2e69 h1:mNMFrlF49ohGZP1pA2jvmqN1P/5hn6AFDXr/+tYpl8g=
+github.com/hlfstr/logit v0.0.0-20190304034238-096a6c1d2e69/go.mod h1:MGKOqtNjo2dhCYGdTVofhGsw+kuT4U7ocJfFNrnAdDw=
+github.com/hlfstr/quit v1.0.1 h1:3BQcqcRPMFWWKuLuRmHXDF7HlP3CSqPhKFDIRPv8xbA=
+github.com/hlfstr/quit v1.0.1/go.mod h1:Yc81YH2Qk923ylVlovQgVCi9qXjcyUsoCnYVn2EhkV0=
+github.com/hlfstr/quit v1.0.2 h1:6LOTmII2o2ZTMgUPk57EU4YsnXJ5R/36w7a41yCM9Ls=
+github.com/hlfstr/quit v1.0.2/go.mod h1:Yc81YH2Qk923ylVlovQgVCi9qXjcyUsoCnYVn2EhkV0=
+github.com/hlfstr/quit/quitters v1.0.1 h1:fHSr55V2IaQOBvJx85sfYaxbPnbQUsdXPx9jWvro4Zg=
+github.com/hlfstr/quit/quitters v1.0.1/go.mod h1:GfRZk2kZXAo/E8t6iqlgi1T7H4LuGGux/ZHm/DFBwvM=
+github.com/hlfstr/quit/quitters v1.0.2 h1:M6cyLuhKynephsaVFEw0mNKE48NWQBRfN8rvUXNAo7k=
+github.com/hlfstr/quit/quitters v1.0.2/go.mod h1:GfRZk2kZXAo/E8t6iqlgi1T7H4LuGGux/ZHm/DFBwvM=
