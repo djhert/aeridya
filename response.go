@@ -3,6 +3,7 @@ package aeridya
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/securecookie"
@@ -36,6 +37,11 @@ func (r *Response) Bad(status int, msg string) {
 func (r *Response) Redirect(status int, url string) {
 	r.Status = status
 	http.Redirect(r.W, r.R, url, status)
+}
+
+func (r *Response) RGet(name string) (string, bool) {
+	o, e := r.R.Form[name]
+	return strings.Join(o, ""), e
 }
 
 func (r *Response) GetCookieValues(name string) (map[string]string, error) {

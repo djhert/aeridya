@@ -6,7 +6,7 @@ const (
 	NAME       = "Aeridya"
 	MAJORVER   = "0"
 	MINORVER   = "9"
-	RELEASEVER = "-alpha"
+	RELEASEVER = "1"
 	DESC       = "Server and CMS"
 )
 
