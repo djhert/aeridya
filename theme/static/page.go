@@ -1,4 +1,4 @@
-package statictheme
+package static
 
 import (
 	"github.com/hlfstr/aeridya"
